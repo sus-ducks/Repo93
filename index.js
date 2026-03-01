@@ -23,6 +23,6 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'repos.json'))
 })
 
-app.listen(3000, () => {
-    console.log("Server listening on port 3000")
+app.listen(42069, () => {
+    console.log("Server listening on port 42069")
 })
