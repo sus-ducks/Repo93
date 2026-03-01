@@ -1,15 +1,12 @@
 {
-  name: "Appstore",
-  command: "appstore",
-  categories: ["Utility"],
-  description: "Windows93 community appstore",
-  desktop: true,
-  
-  width: 641,
-  height: 481,
+    "name": "Repo93",
+    "slug": "repo93appstore",
+    "command": "appstore",
+    "categories": [],
+    "description": "it's an appstore", // todo: credits and stuff type shit
+    "icons": [],
+    "width": 500,
+    "height": 300,
 
-  maximizable: true,
-  resizable: false,
-
-  document: "./index.html",
+    document: "./index.html"
 }
