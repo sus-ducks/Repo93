@@ -165,10 +165,23 @@
 
 		function resolveRepoFetchBaseUrl(repoUrl) {
 			const normalized = normalizeRepoUrl(repoUrl);
+			const githubMatch = normalized.match(/^https?:\/\/(?:www\.)?github\.com\/([^\/]+)\/([^\/]+)(?:\/.*)?$/i);
+
+			if (githubMatch) {
+				const owner = githubMatch[1];
+				const repoName = githubMatch[2].replace(/\.git$/i, '');
+				return `https://raw.githubusercontent.com/${owner}/${repoName}/refs/heads/main`;
+			}
 
 			try {
 				const parsed = new URL(normalized);
-				if (parsed.hostname.toLowerCase() !== 'github.com') {
+				const hostname = parsed.hostname.toLowerCase();
+
+				if (hostname === 'raw.githubusercontent.com') {
+					return normalized;
+				}
+
+				if (hostname !== 'github.com' && hostname !== 'www.github.com') {
 					return normalized;
 				}
 
