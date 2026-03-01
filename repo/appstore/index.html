@@ -84,7 +84,7 @@
 		const statusEl = document.getElementById('status');
 		const appsEl = document.getElementById('apps');
 
-		async function createAppCard(manifest, repoUrl, appPath, appFiles) {
+		async function createAppCard(manifest, repoDisplayUrl, repoFetchBaseUrl, appPath, appFiles) {
 			const item = document.createElement('li');
 			item.className = 'app-card';
 
@@ -94,7 +94,7 @@
 
 			const meta = document.createElement('p');
 			meta.className = 'app-meta';
-			meta.textContent = `${manifest.slug || 'no-slug'} • ${repoUrl}`;
+			meta.textContent = `${manifest.slug || 'no-slug'} • ${repoDisplayUrl}`;
 
 			const description = document.createElement('p');
 			description.className = 'app-description';
@@ -108,7 +108,7 @@
 			stateText.textContent = 'Checking install state...';
 
 			try {
-				const installed = await window.AppInstaller.isInstalled(repoUrl, appPath, manifest, appFiles);
+				const installed = await window.AppInstaller.isInstalled(repoFetchBaseUrl, appPath, manifest, appFiles);
 				actionButton.textContent = installed ? 'Uninstall' : 'Install';
 				stateText.textContent = installed ? 'Installed' : 'Not installed';
 			} catch (error) {
@@ -118,7 +118,7 @@
 
 			async function refreshInstallState() {
 				try {
-					const installed = await window.AppInstaller.isInstalled(repoUrl, appPath, manifest, appFiles);
+					const installed = await window.AppInstaller.isInstalled(repoFetchBaseUrl, appPath, manifest, appFiles);
 					actionButton.textContent = installed ? 'Uninstall' : 'Install';
 					stateText.textContent = installed ? 'Installed' : 'Not installed';
 				} catch (error) {
@@ -131,14 +131,14 @@
 				actionButton.disabled = true;
 
 				try {
-					const installed = await window.AppInstaller.isInstalled(repoUrl, appPath, manifest, appFiles);
+					const installed = await window.AppInstaller.isInstalled(repoFetchBaseUrl, appPath, manifest, appFiles);
 
 					if (installed) {
 						stateText.textContent = 'Uninstalling...';
-						await window.AppInstaller.uninstallApp(manifest, repoUrl, appPath, appFiles);
+						await window.AppInstaller.uninstallApp(manifest, repoFetchBaseUrl, appPath, appFiles);
 					} else {
 						stateText.textContent = 'Installing...';
-						await window.AppInstaller.installApp(manifest, repoUrl, appPath, appFiles);
+						await window.AppInstaller.installApp(manifest, repoFetchBaseUrl, appPath, appFiles);
 					}
 
 					await refreshInstallState();
@@ -161,6 +161,31 @@
 
 		function normalizeRepoUrl(url) {
 			return String(url || '').replace(/\/+$/, '');
+		}
+
+		function resolveRepoFetchBaseUrl(repoUrl) {
+			const normalized = normalizeRepoUrl(repoUrl);
+
+			try {
+				const parsed = new URL(normalized);
+				if (parsed.hostname.toLowerCase() !== 'github.com') {
+					return normalized;
+				}
+
+				const segments = parsed.pathname
+					.split('/')
+					.filter(Boolean);
+
+				if (segments.length < 2) {
+					return normalized;
+				}
+
+				const owner = segments[0];
+				const repoName = segments[1].replace(/\.git$/i, '');
+				return `https://raw.githubusercontent.com/${owner}/${repoName}/refs/heads/main`;
+			} catch (error) {
+				return normalized;
+			}
 		}
 
 		function normalizeAppPath(pathValue) {
@@ -194,8 +219,9 @@
 				let failedApps = 0;
 
 				for (const repo of repos) {
-					const repoUrl = normalizeRepoUrl(repo);
-					const manifestUrl = `${repoUrl}/${MANIFEST_FILE}`;
+					const repoDisplayUrl = normalizeRepoUrl(repo);
+					const repoFetchBaseUrl = resolveRepoFetchBaseUrl(repoDisplayUrl);
+					const manifestUrl = `${repoFetchBaseUrl}/${MANIFEST_FILE}`;
 
 					try {
 						const manifestResponse = await fetch(manifestUrl);
@@ -218,7 +244,7 @@
 							}
 
 							const appPath = normalizeAppPath(appPathRaw);
-							const appManifestUrl = `${repoUrl}/${appPath}/${APP_MANIFEST_FILE}`;
+							const appManifestUrl = `${repoFetchBaseUrl}/${appPath}/${APP_MANIFEST_FILE}`;
 
 							try {
 								const appManifestResponse = await fetch(appManifestUrl);
@@ -231,7 +257,7 @@
 								const appManifestText = await appManifestResponse.text();
 								const appManifest = parseAppManifest(appManifestText);
 
-								const appCard = await createAppCard(appManifest, repoUrl, appPath, appFiles);
+								const appCard = await createAppCard(appManifest, repoDisplayUrl, repoFetchBaseUrl, appPath, appFiles);
 								appsEl.appendChild(appCard);
 								foundApps += 1;
 							} catch (error) {
