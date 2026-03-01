@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/sus-ducks/Repo93#readme",
   "dependencies": {
+    "argon2": "^0.44.0",
     "express": "^5.2.1"
   }
 }

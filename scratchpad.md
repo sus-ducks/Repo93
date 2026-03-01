@@ -2,4 +2,4 @@ account optional for users, with an account, people can like, comment, and uploa
 mod devs link a store repo with all of their apps
 users can browse and add repos which load those mods to their storefront
 
-await sys42.fs.write("/test.txt", "data");
+await window.sys42.fs.write("/test.txt", "data");
